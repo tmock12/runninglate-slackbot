@@ -17,18 +17,27 @@ defmodule RunninglateSlack.Bot do
   end
 
   def handle_message({:type, "message", response}, slack, state) do
-    unless response.channel == @timeout_channel do
-      if text_contains_timeout(response.text) do
-        get_username(response.user, slack)
-        |> generate_response(response.text)
-        |> Slack.send_message(@timeout_channel, slack)
-      end
-    end
+    respond_to_slack(%{
+      text: response.text,
+      slackit: text_contains_timeout(response.text) && response.channel != @timeout_channel,
+      slack: slack,
+      response: response
+    })
     {:ok, state}
   end
 
   def handle_message(_message, _slack, state) do
     {:ok, state}
+  end
+
+  def respond_to_slack(%{text: text, slackit: true, slack: slack, response: response}) do
+    get_username(response.user, slack)
+    |> generate_response(response.text)
+    |> Slack.send_message(@timeout_channel, slack)
+  end
+
+  def respond_to_slack(%{slackit: false}) do
+    {:ok}
   end
 
   def get_username(id, slack) do
