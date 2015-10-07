@@ -18,7 +18,7 @@ defmodule RunninglateSlack.Bot do
 
   def handle_message({:type, "message", response}, slack, state) do
     unless response.channel == @timeout_channel do
-      if String.contains?("#{inspect response.text}", possible_running_late_messages) do
+      if text_contains_timeout(response.text) do
         get_username(response.user, slack)
         |> generate_response(response.text)
         |> Slack.send_message(@timeout_channel, slack)
@@ -45,5 +45,10 @@ defmodule RunninglateSlack.Bot do
       "time out",
       "running late"
     ])
+  end
+
+  def text_contains_timeout(text) do
+    String.downcase(text)
+    |> String.contains?(possible_running_late_messages)
   end
 end
