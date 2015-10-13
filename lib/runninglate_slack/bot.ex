@@ -41,7 +41,6 @@ defmodule RunninglateSlack.Bot do
   end
 
   def post_to_slack_channels([head|tail], message, slack) do
-    IO.inspect head
     case head do
       {:chi, true} ->
         Slack.send_message(message, @chicago_channel, slack)
