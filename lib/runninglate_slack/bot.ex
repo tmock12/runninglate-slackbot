@@ -30,14 +30,14 @@ defmodule RunninglateSlack.Bot do
     {:ok, state}
   end
 
+  def handle_message(_message, _slack, state) do
+    {:ok, state}
+  end
+
   def slackit(response) do
     text_contains(response.text, possible_running_late_messages)
     && response.channel != @timeout_channel
     && response.user != @timeout_bot
-  end
-
-  def handle_message(_message, _slack, state) do
-    {:ok, state}
   end
 
   def post_to_slack_channels([head|tail], message, slack) do
