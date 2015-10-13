@@ -79,10 +79,6 @@ defmodule RunninglateSlack.Bot do
     [chi: text_contains(message, chi_channel_tags), jax: text_contains(message, jax_channel_tags)]
   end
 
-  def post_to_regional_channel(%{chi: false, jax: false}) do
-    {:ok}
-  end
-
   def get_username(id, slack) do
     Slack.State.users(slack)[String.to_atom(id)].name
   end
