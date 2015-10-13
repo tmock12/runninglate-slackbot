@@ -2,6 +2,8 @@ defmodule RunninglateSlack.Bot do
   use Slack
 
   @timeout_channel "C0AQW73S9"
+  @chicago_channel "C02AY1U8W"
+  @jax_channel "C02B0NRFL"
 
   def start_link(initial_state) do
     Slack.start_link(__MODULE__, System.get_env("SLACK_BOT"), initial_state)
@@ -19,15 +21,46 @@ defmodule RunninglateSlack.Bot do
   def handle_message({:type, "message", response}, slack, state) do
     respond_to_slack(%{
       text: response.text,
-      slackit: text_contains_timeout(response.text) && response.channel != @timeout_channel,
+      slackit: slackit(response),
       slack: slack,
-      response: response
+      response: response,
+      channel: response.channel
     })
     {:ok, state}
   end
 
+  def slackit(response) do
+    text_contains(response.text, possible_running_late_messages) && response.channel != @timeout_channel && response.user.name != "timeout"
+  end
+
   def handle_message(_message, _slack, state) do
     {:ok, state}
+  end
+
+  def respond_to_slack(%{response: response, channel: @timeout_channel, slack: slack}) do
+    message = get_username(response.user, slack)
+              |> generate_response(response.text)
+
+    regional_channels(response.text)
+    |> post_to_slack_channels(message, slack)
+  end
+
+  def post_to_slack_channels([head|tail], message, slack) do
+    IO.inspect head
+    case head do
+      {:chi, true} ->
+        Slack.send_message(message, @chicago_channel, slack)
+        post_to_slack_channels(tail, message, slack)
+      {:jax, true} ->
+        Slack.send_message(message, @jax_channel, slack)
+        post_to_slack_channels(tail, message, slack)
+      _ ->
+        post_to_slack_channels(tail, message, slack)
+    end
+  end
+
+  def post_to_slack_channels([], _message, _slack) do
+    {:ok}
   end
 
   def respond_to_slack(%{text: text, slackit: true, slack: slack, response: response}) do
@@ -37,6 +70,14 @@ defmodule RunninglateSlack.Bot do
   end
 
   def respond_to_slack(%{slackit: false}) do
+    {:ok}
+  end
+
+  def regional_channels(message) do
+    [chi: text_contains(message, chi_channel_tags), jax: text_contains(message, jax_channel_tags)]
+  end
+
+  def post_to_regional_channel(%{chi: false, jax: false}) do
     {:ok}
   end
 
@@ -56,8 +97,23 @@ defmodule RunninglateSlack.Bot do
     ])
   end
 
-  def text_contains_timeout(text) do
-    String.downcase(text)
-    |> String.contains?(possible_running_late_messages)
+  def jax_channel_tags do
+    :binary.compile_pattern([
+      "jax",
+      "jacksonville"
+    ])
   end
+
+  def chi_channel_tags do
+    :binary.compile_pattern([
+      "chi",
+      "chicago"
+    ])
+  end
+
+  def text_contains(text, match) do
+    String.downcase(text)
+    |> String.contains?(match)
+  end
+
 end
