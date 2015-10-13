@@ -4,6 +4,7 @@ defmodule RunninglateSlack.Bot do
   @timeout_channel "C0AQW73S9"
   @chicago_channel "C02AY1U8W"
   @jax_channel "C02B0NRFL"
+  @timeout_bot "U0BP6UF33"
 
   def start_link(initial_state) do
     Slack.start_link(__MODULE__, System.get_env("SLACK_BOT"), initial_state)
@@ -30,19 +31,13 @@ defmodule RunninglateSlack.Bot do
   end
 
   def slackit(response) do
-    text_contains(response.text, possible_running_late_messages) && response.channel != @timeout_channel && response.user.name != "timeout"
+    text_contains(response.text, possible_running_late_messages)
+    && response.channel != @timeout_channel
+    && response.user != @timeout_bot
   end
 
   def handle_message(_message, _slack, state) do
     {:ok, state}
-  end
-
-  def respond_to_slack(%{response: response, channel: @timeout_channel, slack: slack}) do
-    message = get_username(response.user, slack)
-              |> generate_response(response.text)
-
-    regional_channels(response.text)
-    |> post_to_slack_channels(message, slack)
   end
 
   def post_to_slack_channels([head|tail], message, slack) do
@@ -61,6 +56,14 @@ defmodule RunninglateSlack.Bot do
 
   def post_to_slack_channels([], _message, _slack) do
     {:ok}
+  end
+
+  def respond_to_slack(%{response: response, channel: @timeout_channel, slack: slack}) do
+    message = get_username(response.user, slack)
+              |> generate_response(response.text)
+
+    regional_channels(response.text)
+    |> post_to_slack_channels(message, slack)
   end
 
   def respond_to_slack(%{text: text, slackit: true, slack: slack, response: response}) do
