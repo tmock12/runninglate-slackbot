@@ -93,7 +93,8 @@ defmodule RunninglateSlack.Bot do
     :binary.compile_pattern([
       "timeout",
       "time out",
-      "running late"
+      "running late",
+      "time-out"
     ])
   end
 
