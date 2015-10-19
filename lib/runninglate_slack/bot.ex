@@ -92,7 +92,8 @@ defmodule RunninglateSlack.Bot do
       "timeout",
       "time out",
       "running late",
-      "time-out"
+      "time-out",
+      "few minutes late"
     ])
   end
 
