@@ -93,7 +93,8 @@ defmodule RunninglateSlack.Bot do
       "time out",
       "running late",
       "time-out",
-      "few minutes late"
+      "few minutes late",
+      String.downcase(@timeout_bot)
     ])
   end
 
